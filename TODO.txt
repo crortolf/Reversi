@@ -1,0 +1,7 @@
+TODO:
+
+Implement helper mode
+create "AI" for single player mode
+game end conditions
+conditions for turns with no valid moves
+pop-up for switching between one and two player? or possibly continue game from preset point?

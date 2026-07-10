@@ -17,8 +17,23 @@
     <h1>Reversi</h1>
     <div class="container-h">
       <div class="container-v">
-        <button onclick="displayRules()">Rules</button>
-        <button onclick="displayBoard()">Play</button>
+        <div class="selectors">
+          <button id="rules-button" onclick="displayRules()">Rules</button>
+          <button id="play-button" onclick="displayBoard()">Play</button>
+        </div>
+        <div class="selectors">
+          <div>
+            <label for="helper-enabled">Helper Mode:</label>
+            <input type="checkbox" id="helper-enabled" value="no" />
+          </div>
+          <div>
+            <label for="gameMode">Game Mode:</label>
+            <select name="gameMode" id="game-mode">
+              <option value="single">Single Player</option>
+              <option value="two">Two Player</option>
+            </select>
+          </div>
+        </div>
       </div>
       <canvas id="canvas" width="800" height="800"></canvas>
       <div class="container-v" id="rules">
@@ -28,22 +43,34 @@
             >Reversi is an abstract strategy board game for two players, played
             on an 8×8 uncheckered board. It was invented in 1883.</q
           >
-          In 1971 it was patented by Goro Hasegawa with slight variations under
-          the more recognizable name <q>Othello</q>.
+          The page goes on to explain in 1971 it was patented by Goro Hasegawa
+          with slight variations under the more recognizable name
+          <b><em>Othello</em></b
+          >. He decided to name the conflict between black and white chips after
+          main characters Moor Othello and Iago from the Shakespearean play
+          <b><em>Othello, the Moor of Venice</em></b
+          >.
         </p>
         <p>
-          The game is played in all eight directions. If helper is enabled, all
-          legal moves will be displayed as orange squares on the board. The
-          first two moves are played in the center four squares. Every turn
-          after, a chip must be placed such that an opposing chip (or better yet
-          a line of them) are surrounded on either side by one of the placer's
-          chips. These surrrounded chips are then captured and flipped. A turn
-          must be taken such that at least on opposing chip is captured. If no
-          such move exists for a player, their turn is skipped.
+          The game is played in all eight directions. The first two moves by
+          each player are played in the center four squares. Every turn after, a
+          chip must be placed such that an opposing chip (or better yet a line
+          of them) is/are surrounded on either side by two of the placer's chips
+          without gaps inbetween. These surrounded chips are then captured and
+          flipped. A turn must be taken such that at least one opposing chip is
+          captured. If no such move exists for a player, their turn is skipped.
         </p>
         <p>
           The game ends when all spaces are occupied. The chips are then counted
           and the player with the most is victorious.
+        </p>
+        <p>
+          If helper mode is enabled, all legal moves will be displayed as
+          <b><em>orange</em></b> squares on the board. Reversi is a solved game.
+          If both players play perfectly, then the result will always be a tie.
+          The <q>AI</q> included in the Single Player game mode will not play a
+          perfect game, it will only play the move that leads to the most
+          captures on the current board.
         </p>
       </div>
     </div>

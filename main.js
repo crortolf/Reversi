@@ -1,6 +1,9 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const rules = document.getElementById("rules");
+const rulesButton = document.getElementById("rules-button");
+const playButton = document.getElementById("play-button");
+const helperCheckbox = document.getElementById("helper-enabled");
 const background = new Image();
 const cell = new Image();
 const redChip = new Image();
@@ -158,11 +161,19 @@ const checkMinCapture = (x, y, blueTurn) => {
 const displayRules = () => {
   rules.style.display = "block";
   canvas.style.display = "none";
+  rulesButton.style.fontWeight = "bold";
+  playButton.style.fontWeight = "normal";
 };
 
 const displayBoard = () => {
   rules.style.display = "none";
   canvas.style.display = "block";
+  playButton.style.fontWeight = "bold";
+  rulesButton.style.fontWeight = "normal";
+};
+
+const drawLegalMoves = () => {
+  console.log("drawing here");
 };
 
 //load all images
@@ -181,6 +192,8 @@ for (let i = 0; i < 8; i++) {
   }
 }
 
+displayRules();
+
 //rules.style.display =
 
 Promise.all([bLoad, rLoad, backLoad, cellLoad]).then(() => {
@@ -195,3 +208,5 @@ Promise.all([bLoad, rLoad, backLoad, cellLoad]).then(() => {
     }
   }
 });
+
+helperCheckbox.addEventListener("change", drawLegalMoves());

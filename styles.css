@@ -4,7 +4,8 @@
   font-size: 20px;
 }
 
-button {
+button,
+.selectors > div {
   padding: 15px;
   font-size: 30px;
   border: 2px solid #e8b23c;
@@ -17,8 +18,14 @@ h1 {
 }
 
 p,
-q {
+q,
+label,
+em {
   background-color: #e6cb97;
+}
+
+div {
+  text-align: center;
 }
 
 .container-h {
@@ -27,6 +34,13 @@ q {
 }
 
 .container-v {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 300px;
+}
+
+.selectors {
   display: flex;
   flex-direction: column;
 }
@@ -38,9 +52,11 @@ q {
   background-color: #e6cb97;
   width: 720px;
   height: 720px;
+  text-align: left;
+  display: none;
 }
 
 #canvas {
-  border: 1px solid black;
+  border: 2px solid black;
   display: none;
 }
