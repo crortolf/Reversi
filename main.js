@@ -9,8 +9,10 @@ background.src = "./resources/background.jpg";
 cell.src = "./resources/cell.jpg";
 redChip.src = "./resources/redChip.png";
 blueChip.src = "./resources/blueChip.png";
-//2D array with numeric representation of current state; -1 is black, 0 is empty, 1 is white
+//2D array with numeric representation of current state; -1 is red, 0 is empty, 1 is blue
 const board = [];
+//track number of turns taken
+let turn = 0;
 
 //width of each 8x8 piece of canvas
 const eighth = canvas.width / 8;
@@ -20,8 +22,6 @@ const offset = eighth / 10;
 const cellSize = eighth - 2 * offset;
 //set representing all cells that can be played in next if they are empty and adjacent to ann occupied cell
 const emptyCells = new Set();
-//if it is blue's turn or red's
-let blueTurn = true;
 
 //give pixel position of grid location
 const grid = (coord) => {
@@ -31,159 +31,128 @@ const grid = (coord) => {
 const placeBlue = (x, y) => {
   ctx.drawImage(cell, grid(x), grid(y), cellSize, cellSize);
   ctx.drawImage(blueChip, grid(x), grid(y), cellSize, cellSize);
-  blueTurn = !blueTurn;
-  console.log(checkCaptures(x, y));
+  board[y][x] = 1;
 };
 
 const placeRed = (x, y) => {
   ctx.drawImage(cell, grid(x), grid(y), cellSize, cellSize);
   ctx.drawImage(redChip, grid(x), grid(y), cellSize, cellSize);
-  blueTurn = !blueTurn;
-  console.log(checkCaptures(x, y));
+  board[y][x] = -1;
 };
 
 //converts mouse click into x and y coords of cell that was clicked on...
-const getMousePosition = (canvas, event) => {
+const checkChipPlacement = (canvas, event) => {
   let rect = canvas.getBoundingClientRect();
   let x = Math.floor((event.clientX - rect.left) / eighth);
   let y = Math.floor((event.clientY - rect.top) / eighth);
 
-  //...and places a chip accordingly
-  if (blueTurn) {
-    board[y][x] = 1;
-    placeBlue(x, y);
+  //...and checks if at least one capture is made...
+  if ((board[y][x] === 0 && turn < 4) || checkMinCapture(x, y, turn % 2 == 0)) {
+    //...then places one chip accordingly if a valid move is made
+    if (turn % 2 == 0) {
+      capture(x, y, turn % 2 == 0);
+      placeBlue(x, y);
+    } else {
+      capture(x, y, turn % 2 == 0);
+      placeRed(x, y);
+    }
+    turn++;
   } else {
-    board[y][x] = -1;
-    placeRed(x, y);
+    console.log("Invalid move");
   }
 
   //for (let arr in board) console.log(board[arr]);
   //console.log("--------------------------");
 };
 
-const checkCaptures = (x, y) => {
+//check number of captures in a given direction, 0 is left, 1 is left up, 2 is up, etc
+const checkDir = (dir, x, y, blueTurn) => {
   let captures = 0;
-  let unverifiedCaptures = 0;
-  let verified = false;
-  //left
-  for (let i = x - 1; i >= 0; i--) {
-    if (board[y][i] == 0) {
-      break;
-    } else if (board[y][i] != board[y][x]) {
-      unverifiedCaptures++;
-    } else {
-      verified = true;
-      break;
-    }
-  }
-  if (verified) captures += unverifiedCaptures;
+  let i = x,
+    j = y;
+  let movement;
 
-  unverifiedCaptures = 0;
-  verified = false;
-  //right
-  for (let i = x + 1; i < 8; i++) {
-    if (board[y][i] == 0) {
-      break;
-    } else if (board[y][i] != board[y][x]) {
-      unverifiedCaptures++;
+  while (true) {
+    movement = incDir(dir, i, j);
+    i = movement[0];
+    j = movement[1];
+    if (j >= 0 && i >= 0 && j < 8 && i < 8) {
+      if (
+        (board[j][i] === -1 && blueTurn) ||
+        (board[j][i] === 1 && !blueTurn)
+      ) {
+        captures++;
+      } else if (
+        (board[j][i] === 1 && blueTurn) ||
+        (board[j][i] === -1 && !blueTurn)
+      ) {
+        return captures;
+      } else {
+        return 0;
+      }
     } else {
-      verified = true;
-      break;
+      return 0;
     }
   }
-  if (verified) captures += unverifiedCaptures;
+};
 
-  unverifiedCaptures = 0;
-  verified = false;
-  //up
-  for (let i = y - 1; i >= 0; i--) {
-    if (board[i][x] == 0) {
-      break;
-    } else if (board[i][x] != board[y][x]) {
-      unverifiedCaptures++;
-    } else {
-      verified = true;
-      break;
-    }
+//increment or decrement coordinate value based on direction
+const incDir = (dir, i, j) => {
+  if (dir === 0) i--;
+  else if (dir === 1) {
+    i--;
+    j--;
+  } else if (dir === 2) j--;
+  else if (dir === 3) {
+    j--;
+    i++;
+  } else if (dir === 4) i++;
+  else if (dir === 5) {
+    i++;
+    j++;
+  } else if (dir === 6) j++;
+  else if (dir === 7) {
+    i--;
+    j++;
   }
-  if (verified) captures += unverifiedCaptures;
 
-  unverifiedCaptures = 0;
-  verified = false;
-  //down
-  for (let i = y + 1; i < 8; i++) {
-    if (board[i][x] == 0) {
-      break;
-    } else if (board[i][x] != board[y][x]) {
-      unverifiedCaptures++;
-    } else {
-      verified = true;
-      break;
-    }
-  }
-  if (verified) captures += unverifiedCaptures;
+  return [i, j];
+};
 
-  unverifiedCaptures = 0;
-  verified = false;
-  //up left
-  for (let i = 1; y - 1 >= 0 && x - i >= 0; i++) {
-    if (board[y - i][x - i] == 0) {
-      break;
-    } else if (board[y - i][x - i] != board[y][x]) {
-      unverifiedCaptures++;
-    } else {
-      verified = true;
-      break;
-    }
-  }
-  if (verified) captures += unverifiedCaptures;
+const capture = (x, y, blueTurn) => {
+  let directionalCaptures = 0;
+  let row, col;
+  let nextChip;
 
-  unverifiedCaptures = 0;
-  verified = false;
-  //up right
-  for (let i = 1; y - 1 >= 0 && x + i < 8; i++) {
-    if (board[y - i][x + i] == 0) {
-      break;
-    } else if (board[y - i][x + i] != board[y][x]) {
-      unverifiedCaptures++;
-    } else {
-      verified = true;
-      break;
+  for (let i = 0; i < 8; i++) {
+    directionalCaptures = checkDir(i, x, y, blueTurn);
+    row = y;
+    col = x;
+    for (let j = 0; j < directionalCaptures; j++) {
+      nextChip = incDir(i, col, row);
+      col = nextChip[0];
+      row = nextChip[1];
+      if (blueTurn) placeBlue(col, row);
+      else placeRed(col, row);
     }
   }
-  if (verified) captures += unverifiedCaptures;
+};
 
-  unverifiedCaptures = 0;
-  verified = false;
-  //down right
-  for (let i = 1; y + 1 < 8 && x + i < 8; i++) {
-    if (board[y + i][x + i] == 0) {
-      break;
-    } else if (board[y + i][x + i] != board[y][x]) {
-      unverifiedCaptures++;
-    } else {
-      verified = true;
-      break;
-    }
-  }
-  if (verified) captures += unverifiedCaptures;
+const checkCaptures = (x, y, blueTurn) => {
+  let captures = 0;
 
-  unverifiedCaptures = 0;
-  verified = false;
-  //down left
-  for (let i = 1; y + 1 < 8 && x - i >= 0; i++) {
-    if (board[y + i][x - i] == 0) {
-      break;
-    } else if (board[y + i][x - i] != board[y][x]) {
-      unverifiedCaptures++;
-    } else {
-      verified = true;
-      break;
-    }
+  for (let i = 0; i < 8; i++) {
+    captures += checkDir(i, x, y, blueTurn);
   }
-  if (verified) captures += unverifiedCaptures;
 
   return captures;
+};
+
+const checkMinCapture = (x, y, blueTurn) => {
+  for (let i = 0; i < 8; i++) {
+    if (checkDir(i, x, y, blueTurn) > 0) return true;
+  }
+  return false;
 };
 
 const displayRules = () => {
@@ -216,7 +185,7 @@ for (let i = 0; i < 8; i++) {
 
 Promise.all([bLoad, rLoad, backLoad, cellLoad]).then(() => {
   canvas.addEventListener("mousedown", function (e) {
-    getMousePosition(canvas, e);
+    checkChipPlacement(canvas, e);
   });
 
   ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
