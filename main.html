@@ -5,10 +5,48 @@
     <title>Reversi</title>
     <meta charset="UTF-8" />
     <link href="styles.css" rel="stylesheet" type="text/css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
   </head>
 
   <body>
-    <canvas id="canvas" width="800" height="800"></canvas>
+    <h1>Reversi</h1>
+    <div class="container-h">
+      <div class="container-v">
+        <button onclick="displayRules()">Rules</button>
+        <button onclick="displayBoard()">Play</button>
+      </div>
+      <canvas id="canvas" width="800" height="800"></canvas>
+      <div class="container-v" id="rules">
+        <p>
+          From Wikipedia:
+          <q
+            >Reversi is an abstract strategy board game for two players, played
+            on an 8×8 uncheckered board. It was invented in 1883.</q
+          >
+          In 1971 it was patented by Goro Hasegawa with slight variations under
+          the more reecognizable name <q>Othello</q>.
+        </p>
+        <p>
+          The game is played in all eight directions. All legal moves will be
+          displayed as orange squares on the board. The first two moves are
+          played in the center four squares. Every turn after, a chip must be
+          placed such that an opposing chip (or better yet a line of them) are
+          surrounded on either side by one of the placer's chips. These
+          surrrounded chips are then captured and flipped. A turn must be taken
+          such that at least on opposing chip is captured. If no such move
+          exists for a player, their turn is skipped.
+        </p>
+        <p>
+          The game ends when all spaces are occupied. The chips are then counted
+          and the player with the most is victorious.
+        </p>
+      </div>
+    </div>
 
     <script type="text/javascript" src="main.js"></script>
   </body>
