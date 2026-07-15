@@ -1,7 +1,10 @@
 TODO:
 
-Implement helper mode
-create "AI" for single player mode
-game end conditions
-conditions for turns with no valid moves
+create opponent for single player mode
+refactor to resizable board
+change move post so that it returns game turn and whose turn it is
 pop-up for switching between one and two player? or possibly continue game from preset point?
+refactor to server-client API
+make hide button work so that board can be seen but there is still an option to start a new game
+
+check legality and potential moves both server and client side

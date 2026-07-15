@@ -13,8 +13,14 @@ button,
 }
 
 h1 {
-  font-size: 50px;
+  font-size: 80px;
   text-align: center;
+}
+
+h3 {
+  font-size: 50px;
+  background-color: #e6cb97;
+  margin-bottom: 12px;
 }
 
 p,
@@ -26,6 +32,12 @@ em {
 
 div {
   text-align: center;
+}
+
+img {
+  width: 80px;
+  height: auto;
+  background-color: #e6cb97;
 }
 
 .container-h {
@@ -45,6 +57,10 @@ div {
   flex-direction: column;
 }
 
+#rules-button {
+  font-weight: bold;
+}
+
 #rules {
   margin: 0;
   padding: 40px;
@@ -53,10 +69,53 @@ div {
   width: 720px;
   height: 720px;
   text-align: left;
+  display: block;
+}
+
+#game-board {
+  border: 2px solid black;
+  width: 800px;
+  height: 800px;
   display: none;
+  position: relative;
 }
 
 #canvas {
-  border: 2px solid black;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#game-over {
+  width: 316px;
+  height: 316px;
+  position: absolute;
+  top: 200px;
+  left: 200px;
+  background-color: #e6cb97;
+  padding: 40px;
+  padding-top: 20px;
+  border: 2px solid #e8b23c;
   display: none;
+}
+
+#turn-skipped {
+  width: 166px;
+  position: absolute;
+  top: 300px;
+  left: 300px;
+  background-color: #e6cb97;
+  padding: 20px;
+  border: 2px solid #e8b23c;
+  display: none;
+}
+
+#hide-game-over {
+  padding: 10px;
+  font-size: 16px;
+}
+
+#retrieve-game {
+  font-size: 20px;
+  border: 0px;
 }

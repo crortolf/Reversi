@@ -1,0 +1,21 @@
+all enpoints start with:
+http://127.0.0.1:3000
+
+start a new game:
+request:
+?newGame
+return:
+gameCode
+
+view a game:
+request:
+?gameCode={{gameCode}}
+return:
+(JSON) gameBoard, turn, blueTurn
+
+post a potential move:
+raw JSON:
+{ xCoord, yCoord, gameCode }
+return:
+(JSON) success, board
+(error) "error": "invalid move"
