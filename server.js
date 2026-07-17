@@ -27,7 +27,6 @@ const attemptMove = (x, y, gameCode) => {
   ) {
     //...then places one chip accordingly if a valid move is made. captures are made from this move
     capture(x, y, gameCode);
-    turn++;
     games.get(gameCode).turn++;
     games.get(gameCode).blueTurn = !blueTurn;
     //TODO: Need to add server-side check for skip turn
@@ -89,8 +88,6 @@ const checkDir = (dir, x, y, gameCode) => {
       return 0;
     }
   }
-
-  return captures;
 };
 
 //increment or decrement coordinate value based on direction
@@ -138,6 +135,17 @@ const capture = (x, y, gameCode) => {
   }
 };
 
+const checkSkipTurn = (gameCode) => {
+  if (games.get(gameCode).turn < 4) return;
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
+      if (checkMinCapture(i, j, gameCode)) return;
+    }
+  }
+
+  games.get(gameCode).blueTurn = !games.get(gameCode).blueTurn;
+};
+
 const server = http.createServer((req, res) => {
   const gameRequest = new URL(req.url, "http://127.0.0.1:5500");
 
@@ -167,7 +175,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(gameCode));
     // request for a game to display
-  } else if (req.method === "GET") {
+  } else if (req.method === "GET" && gameRequest.searchParams.has("gameCode")) {
     gameCode = gameRequest.searchParams.get("gameCode");
     //if the game code maps to an existing game, return it
     if (games.has(gameCode)) {
@@ -191,10 +199,11 @@ const server = http.createServer((req, res) => {
         const { xCoord, yCoord, gameCode } = JSON.parse(body);
         const moveResult = attemptMove(xCoord, yCoord, gameCode);
         if (moveResult === 1) {
+          checkSkipTurn(gameCode);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(games.get(gameCode)));
         } else {
-          res.writeHead(400, { "Content-Type": "application/json" });
+          res.writeHead(422, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "invalid move" }));
         }
       } catch (err) {
@@ -203,6 +212,9 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: "Invalid JSON format" }));
       }
     });
+  } else {
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Unrecognized request" }));
   }
 });
 
