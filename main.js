@@ -12,6 +12,7 @@ const redChip = new Image();
 const blueChip = new Image();
 const turnDisplay = document.getElementById("turn-display");
 const skippingTurn = document.getElementById("turn-skipped");
+const gameCodeInput = document.getElementById("game-code");
 background.src = "./resources/background.jpg";
 cell.src = "./resources/cell.jpg";
 redChip.src = "./resources/redChip.png";
@@ -43,39 +44,46 @@ const attemptChipPlacement = async (canvas, event) => {
   let x = Math.floor((event.clientX - rect.left) / eighth);
   let y = Math.floor((event.clientY - rect.top) / eighth);
 
-  try {
-    //and creates a move instance to submit to the server
-    console.log("got here");
-    const move = { xCoord: x, yCoord: y, gameCode: currentGameCode };
-    console.log(move);
-    const attemptedMoveResult = await fetch("http://127.0.0.1:3000", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(move),
-    });
+  //first we do a local check to make sure a valid move was selected
 
-    console.log(attemptedMoveResult.ok);
+  if (
+    (turn < 4 && (x === 3 || x === 4) && (y === 3 || y === 4)) ||
+    checkMinCapture(x, y)
+  ) {
+    try {
+      //and creates a move instance to submit to the server
+      const move = { xCoord: x, yCoord: y, gameCode: currentGameCode };
+      const attemptedMoveResult = await fetch("http://127.0.0.1:3000", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(move),
+      });
 
-    if (attemptedMoveResult.ok) {
-      console.log("got here too");
-      console.log(attemptedMoveResult);
-      let temp = await attemptedMoveResult.json();
-      console.log(temp);
-      ({ board, turn, blueTurn } = temp);
-      board = temp.gameBoard;
-      console.log(board);
-      redrawBoard();
-    } else {
-      console.log("attempted move failed");
+      console.log(attemptedMoveResult.ok);
+
+      if (attemptedMoveResult.ok) {
+        console.log(attemptedMoveResult);
+        let updatedGame = await attemptedMoveResult.json();
+        let previousPlayer = blueTurn;
+        //we are receiving a prop called gameboard here and that is overloaded (used by the element gameboard locally) so we have to destruct and then set board
+        ({ _, turn, blueTurn } = updatedGame);
+        if (turn < 64 && previousPlayer === blueTurn) skipTurn();
+        board = updatedGame.gameBoard;
+        if (turn == 64) endGame();
+        redrawBoard();
+      } else {
+        console.log("attempted move failed");
+      }
+    } catch (e) {
+      console.log("try-catch error");
+      console.log(e);
     }
-  } catch (e) {
-    console.log("try-catch error");
-    console.log(e);
+  } else {
+    //TODO: display info to the player
+    console.log("client-side invalid move");
   }
-
-  //TODO: need to parse return data
 };
 
 const displayRules = () => {
@@ -113,36 +121,102 @@ const redrawBoard = async () => {
       else if (board[j][i] === -1)
         ctx.drawImage(redChip, grid(i), grid(j), cellSize, cellSize);
 
-      // //draw orange square if helper mode is enabled and this space represents a legal move
-      // if (
-      //   turn < 4 &&
-      //   (i === 3 || i === 4) &&
-      //   (j === 3 || j === 4) &&
-      //   board[j][i] === 0
-      // ) {
-      //   skipTurn = false;
-      //   if (helperCheckbox.checked) {
-      //     ctx.fillStyle = "#e6cb97";
-      //     ctx.fillRect(grid(i), grid(j), cellSize, cellSize);
-      //   }
-      // } else if (turn >= 4 && board[j][i] === 0 && checkMinCapture(i, j)) {
-      //   skipTurn = false;
-      //   if (helperCheckbox.checked) {
-      //     ctx.fillStyle = "#e6cb97";
-      //     ctx.fillRect(grid(i), grid(j), cellSize, cellSize);
-      //   }
-      // }
+      //draw orange square if helper mode is enabled and this space represents a legal move
+      if (
+        turn < 4 &&
+        (i === 3 || i === 4) &&
+        (j === 3 || j === 4) &&
+        board[j][i] === 0
+      ) {
+        skipTurn = false;
+        if (helperCheckbox.checked) {
+          ctx.fillStyle = "#e6cb97";
+          ctx.fillRect(grid(i), grid(j), cellSize, cellSize);
+        }
+      } else if (turn >= 4 && board[j][i] === 0 && checkMinCapture(i, j)) {
+        skipTurn = false;
+        if (helperCheckbox.checked) {
+          ctx.fillStyle = "#e6cb97";
+          ctx.fillRect(grid(i), grid(j), cellSize, cellSize);
+        }
+      }
     }
   }
 
-  //condition if there is no valid move and the opponent must play again
-  // if (skipTurn && turn < 64) {
-  //   skippingTurn.style.display = "block";
-  //   await new Promise((resolve) => setTimeout(resolve, 3000));
-  //   skippingTurn.style.display = "none";
-  //   blueTurn = !blueTurn;
-  //   redrawBoard();
-  // }
+  gameCodeInput.value = currentGameCode;
+};
+
+const checkCaptures = (x, y) => {
+  let captures = 0;
+
+  for (let i = 0; i < 8; i++) {
+    captures += checkDir(i, x, y);
+  }
+
+  return captures;
+};
+
+//check if there is at least one capture for a given move
+const checkMinCapture = (x, y) => {
+  if (board[y][x] !== 0) return false;
+  for (let i = 0; i < 8; i++) {
+    if (checkDir(i, x, y) > 0) return true;
+  }
+  return false;
+};
+
+//check number of captures in a given direction, 0 is left, 1 is left up, 2 is up, etc
+const checkDir = (dir, x, y) => {
+  let captures = 0;
+  let i = x,
+    j = y;
+  let movement;
+
+  while (true) {
+    [i, j] = incDir(dir, i, j);
+    if (j >= 0 && i >= 0 && j < 8 && i < 8) {
+      if (
+        (board[j][i] === -1 && blueTurn) ||
+        (board[j][i] === 1 && !blueTurn)
+      ) {
+        captures++;
+      } else if (
+        (board[j][i] === 1 && blueTurn) ||
+        (board[j][i] === -1 && !blueTurn)
+      ) {
+        return captures;
+      } else {
+        return 0;
+      }
+    } else {
+      return 0;
+    }
+  }
+
+  return captures;
+};
+
+//increment or decrement coordinate value based on direction
+const incDir = (dir, i, j) => {
+  if (dir === 0) i--;
+  else if (dir === 1) {
+    i--;
+    j--;
+  } else if (dir === 2) j--;
+  else if (dir === 3) {
+    j--;
+    i++;
+  } else if (dir === 4) i++;
+  else if (dir === 5) {
+    i++;
+    j++;
+  } else if (dir === 6) j++;
+  else if (dir === 7) {
+    i--;
+    j++;
+  }
+
+  return [i, j];
 };
 
 //start a new game
@@ -153,6 +227,7 @@ const newGame = async () => {
     if (newGameResponse.ok) {
       console.log("received good response from the server:");
       currentGameCode = await newGameResponse.json();
+      gameCodeInput.value = currentGameCode;
       console.log(currentGameCode);
       board = [];
       for (let i = 0; i < 8; i++) {
@@ -197,6 +272,40 @@ const endGame = () => {
     "Final score was " + blueScore + " to " + redScore;
 };
 
+//if there is no valid move and the opponent must play again
+const skipTurn = async () => {
+  blueTurn = !blueTurn;
+  skippingTurn.style.display = "block";
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  skippingTurn.style.display = "none";
+  blueTurn = !blueTurn;
+  redrawBoard();
+};
+
+const retrieveGame = async () => {
+  currentGameCode = gameCodeInput.value;
+  try {
+    const retrieveResponse = await fetch(
+      "http://localhost:3000?gameCode=" + currentGameCode,
+    );
+
+    if (retrieveResponse.ok) {
+      let retrievedGame = await retrieveResponse.json();
+      ({ _, turn, blueTurn } = retrievedGame);
+      board = retrievedGame.gameBoard;
+      redrawBoard();
+      //need to write new game gameCode to the field on the webpage
+    } else {
+      console.log("invalid game code");
+    }
+  } catch (error) {
+    console.log("try-catch error");
+    console.log(error);
+  }
+
+  redrawBoard();
+};
+
 //load all images
 const bLoad = new Promise((resolve) => (blueChip.onload = () => resolve()));
 const rLoad = new Promise((resolve) => (redChip.onload = () => resolve()));
@@ -219,5 +328,6 @@ Promise.all([bLoad, rLoad, backLoad, cellLoad]).then(() => {
   //event listener in case the helper mode is enabled or disabled
   helperCheckbox.addEventListener("change", redrawBoard);
 
+  //TODO: work on multiplayer/singleplayer toggle
   document.getElementById("game-mode").addEventListener("change", () => 0);
 });

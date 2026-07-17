@@ -17,5 +17,5 @@ post a potential move:
 raw JSON:
 { xCoord, yCoord, gameCode }
 return:
-(JSON) success, board
+(JSON) board
 (error) "error": "invalid move"
