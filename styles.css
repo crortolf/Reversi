@@ -99,15 +99,15 @@ img {
   display: none;
 }
 
-#turn-skipped {
-  width: 166px;
+#game-notifications {
   position: absolute;
-  top: 300px;
-  left: 300px;
   background-color: #e6cb97;
-  padding: 20px;
   border: 2px solid #e8b23c;
+  padding: 20px;
   display: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 #hide-game-over {

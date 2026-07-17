@@ -11,8 +11,9 @@ const cell = new Image();
 const redChip = new Image();
 const blueChip = new Image();
 const turnDisplay = document.getElementById("turn-display");
-const skippingTurn = document.getElementById("turn-skipped");
+const gameNotifier = document.getElementById("game-notifications");
 const gameCodeInput = document.getElementById("game-code");
+const gameModeSelect = document.getElementById("game-mode");
 background.src = "./resources/background.jpg";
 cell.src = "./resources/cell.jpg";
 redChip.src = "./resources/redChip.png";
@@ -23,6 +24,8 @@ let board;
 let turn = 0;
 let blueTurn = true;
 let currentGameCode;
+let singlePlayer = true;
+let gamePlayDisabled = false;
 
 //width of each 8x8 piece of canvas
 const eighth = canvas.width / 8;
@@ -61,8 +64,6 @@ const attemptChipPlacement = async (canvas, event) => {
         body: JSON.stringify(move),
       });
 
-      console.log(attemptedMoveResult.ok);
-
       if (attemptedMoveResult.ok) {
         console.log(attemptedMoveResult);
         let updatedGame = await attemptedMoveResult.json();
@@ -82,6 +83,7 @@ const attemptChipPlacement = async (canvas, event) => {
     }
   } else {
     //TODO: display info to the player
+    displayError("Invalid move");
     console.log("client-side invalid move");
   }
 };
@@ -101,10 +103,7 @@ const displayBoard = () => {
 };
 
 //redraw the board anytime a change is made (move made, helper mode enabled/disabled)
-//also checks that there is at least one valid move
 const redrawBoard = async () => {
-  let skipTurn = true;
-
   if (blueTurn) {
     turnDisplay.src = "./resources/blueChip.png";
     turnDisplay.alt = "Blue's Turn";
@@ -128,13 +127,11 @@ const redrawBoard = async () => {
         (j === 3 || j === 4) &&
         board[j][i] === 0
       ) {
-        skipTurn = false;
         if (helperCheckbox.checked) {
           ctx.fillStyle = "#e6cb97";
           ctx.fillRect(grid(i), grid(j), cellSize, cellSize);
         }
       } else if (turn >= 4 && board[j][i] === 0 && checkMinCapture(i, j)) {
-        skipTurn = false;
         if (helperCheckbox.checked) {
           ctx.fillStyle = "#e6cb97";
           ctx.fillRect(grid(i), grid(j), cellSize, cellSize);
@@ -222,13 +219,14 @@ const incDir = (dir, i, j) => {
 //start a new game
 const newGame = async () => {
   try {
-    const newGameResponse = await fetch("http://localhost:3000?newGame");
+    const newGameResponse = await fetch(
+      "http://localhost:3000?newGame&singlePlayer=" + singlePlayer,
+    );
 
     if (newGameResponse.ok) {
       console.log("received good response from the server:");
       currentGameCode = await newGameResponse.json();
       gameCodeInput.value = currentGameCode;
-      console.log(currentGameCode);
       board = [];
       for (let i = 0; i < 8; i++) {
         board.push([0, 0, 0, 0, 0, 0, 0, 0]);
@@ -239,12 +237,24 @@ const newGame = async () => {
       console.log("there was a fetch error");
     }
   } catch (error) {
+    displayError("There was an error reaching the server");
     console.log("try-catch error");
     console.log(error);
   }
 
   redrawBoard();
   gameOver.style.display = "none";
+};
+
+const displayError = async (msg) => {
+  gamePlayDisabled = true;
+  gameNotifier.textContent = msg;
+  gameNotifier.style.width = "250px";
+  gameNotifier.style.display = "block";
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  gameNotifier.style.display = "none";
+  gamePlayDisabled = false;
+  redrawBoard();
 };
 
 const hideGO = () => {
@@ -274,14 +284,17 @@ const endGame = () => {
 
 //if there is no valid move and the opponent must play again
 const skipTurn = async () => {
-  blueTurn = !blueTurn;
-  skippingTurn.style.display = "block";
+  gamePlayDisabled = true;
+  gameNotifier.textContent = "No valid moves detected, skipping a turn";
+  gameNotifier.style.width = "300px";
+  gameNotifier.style.display = "block";
   await new Promise((resolve) => setTimeout(resolve, 3000));
-  skippingTurn.style.display = "none";
-  blueTurn = !blueTurn;
+  gameNotifier.style.display = "none";
+  gamePlayDisabled = true;
   redrawBoard();
 };
 
+//player can retreive a game to pickup wherre they leftoff if they navigate away
 const retrieveGame = async () => {
   currentGameCode = gameCodeInput.value;
   try {
@@ -291,11 +304,13 @@ const retrieveGame = async () => {
 
     if (retrieveResponse.ok) {
       let retrievedGame = await retrieveResponse.json();
-      ({ _, turn, blueTurn } = retrievedGame);
+      ({ _, turn, blueTurn, singlePlayer } = retrievedGame);
       board = retrievedGame.gameBoard;
+      if (singlePlayer) gameModeaSelect.value = "single";
+      else gameModeSelect.value = "two";
       redrawBoard();
-      //need to write new game gameCode to the field on the webpage
     } else {
+      displayError("The game code was not recognized");
       console.log("invalid game code");
     }
   } catch (error) {
@@ -304,6 +319,19 @@ const retrieveGame = async () => {
   }
 
   redrawBoard();
+};
+
+//ask the player if they wish to switch moddes, in which case a new game must be started
+const confirmSwitchMode = () => {
+  if (gameModeSelect.value === "single") {
+    //if no turn has been played, then we just start a new one in singleplayer
+    if (turn === 0) {
+      singlePlayer = true;
+      newGame();
+    } else {
+      //prompt the user before switching gamemodes
+    }
+  }
 };
 
 //load all images
@@ -329,5 +357,7 @@ Promise.all([bLoad, rLoad, backLoad, cellLoad]).then(() => {
   helperCheckbox.addEventListener("change", redrawBoard);
 
   //TODO: work on multiplayer/singleplayer toggle
-  document.getElementById("game-mode").addEventListener("change", () => 0);
+  document.getElementById("game-mode").addEventListener("change", () => {
+    if (!gamePlayEnabled) confirmSwitchMode();
+  });
 });

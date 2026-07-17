@@ -11,6 +11,8 @@ const genNewGameCode = () => {
     const randomIndex = Math.floor(Math.random() * chars.length);
     result += chars[randomIndex];
   }
+  //check that the key is unused
+  if (games.has(result)) return genNewGameCode();
   return result;
 };
 
@@ -29,14 +31,12 @@ const attemptMove = (x, y, gameCode) => {
     capture(x, y, gameCode);
     games.get(gameCode).turn++;
     games.get(gameCode).blueTurn = !blueTurn;
-    //TODO: Need to add server-side check for skip turn
     //represents success
     return 1;
   } else {
     //represents failure
     return -1;
   }
-  //TODO: refactor to return game data (save to map?) and move endgame check to main.js
 };
 
 //find total number of captures for a given move
@@ -165,13 +165,22 @@ const server = http.createServer((req, res) => {
 
     //generates a new game and logs it in the map with a random game code
     //returns the game code as well as the new empty board
-  } else if (req.method === "GET" && gameRequest.searchParams.has("newGame")) {
+  } else if (
+    req.method === "GET" &&
+    gameRequest.searchParams.has("newGame") &&
+    gameRequest.searchParams.has("singlePlayer")
+  ) {
     let newBoard = [];
     for (let i = 0; i < 8; i++) {
       newBoard.push([0, 0, 0, 0, 0, 0, 0, 0]);
     }
     gameCode = genNewGameCode();
-    games.set(gameCode, { gameBoard: newBoard, turn: 0, blueTurn: true });
+    games.set(gameCode, {
+      gameBoard: newBoard,
+      turn: 0,
+      blueTurn: true,
+      singlePlayer: gameRequest.searchParams.get("singlePlayer"),
+    });
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(gameCode));
     // request for a game to display

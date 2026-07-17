@@ -2,9 +2,8 @@ TODO:
 
 create opponent for single player mode
 refactor to resizable board
-change move post so that it returns game turn and whose turn it is
 pop-up for switching between one and two player? or possibly continue game from preset point?
-refactor to server-client API
 make hide button work so that board can be seen but there is still an option to start a new game
-
-check legality and potential moves both server and client side
+prompt user to confirm they want to start a new game when changing gamemodes
+need to change multiplayer post request so that it creates a promise that pings the server
+update getgame/post move so that they first check that the game exists in our map
